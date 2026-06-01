@@ -1,0 +1,4 @@
+../Core/Src/servo.c:3:6:Servo_F401_Init	1
+../Core/Src/servo.c:34:6:Set_Servo1	3
+../Core/Src/servo.c:41:6:Set_Servo2	3
+../Core/Src/servo.c:47:6:delay_simple	2
