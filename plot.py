@@ -24,10 +24,10 @@ fig, ax = plt.subplots(figsize=(10, 5))
 line, = ax.plot([], [], lw=2, color='blue')
 display_samples = SAMPLES_PER_FRAME
 ax.set_xlim(0, display_samples)
-ax.set_ylim(0, 4095) # ADC 12-bit co gia tri tu 0 den 4095
+ax.set_ylim(0, 3.5) # Dien ap thuc te tu 0 den 3.3V, de 3.5 cho do thi dep
 ax.set_title("Oscilloscope - Realtime Waveform")
 ax.set_xlabel("Sample Index")
-ax.set_ylabel("ADC Value (0-4095)")
+ax.set_ylabel("Voltage (V)")
 ax.grid(True)
 
 # Text de hien thi tan so
@@ -89,10 +89,13 @@ def update(frame):
     # Doc 1 frame du lieu tu STM32
     data, sample_rate = read_frame()
     if data is not None and sample_rate > 0:
-        # Cap nhat do thi
-        line.set_data(range(SAMPLES_PER_FRAME), data)
+        # Chuyen doi tu ADC 12-bit (0-4095) sang dien ap (0-3.3V)
+        voltage_data = data * (3.3 / 4095.0)
         
-        # Tinh va cap nhat tan so
+        # Cap nhat do thi
+        line.set_data(range(SAMPLES_PER_FRAME), voltage_data)
+        
+        # Tinh va cap nhat tan so (giu nguyen data goc de tinh de khong sai so)
         freq = calculate_frequency(data, sample_rate)
         freq_text.set_text(f"Frequency: {freq:.2f} Hz\nSample Rate: {sample_rate} Hz")
         

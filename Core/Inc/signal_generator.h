@@ -21,5 +21,7 @@ extern volatile WaveformMode current_mode;
 void SignalGenerator_Init(void);
 void Set_Frequency(uint32_t freq);
 void Set_Mode(WaveformMode mode);
+void Stop_Signal(void);
+void Start_Signal(void);
 
 #endif // SIGNAL_GENERATOR_H

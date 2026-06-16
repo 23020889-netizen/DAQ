@@ -19,7 +19,20 @@ static void Generate_LUTs(void);
 static void GPIO_Signal_Config(void);
 static void TIM1_PWM_Config(void);
 static void TIM3_Config(void);
+static void TIM3_Config(void);
 static void Apply_Signal_Settings(void);
+
+// --- SIGNAL CONTROL ---
+void Stop_Signal(void) {
+    TIM1->CR1 &= ~TIM_CR1_CEN;  // Dừng đếm Timer 1
+    TIM3->CR1 &= ~TIM_CR1_CEN;  // Dừng đếm Timer 3
+    TIM1->CCR1 = 0;             // Đặt độ rộng xung = 0
+    TIM1->EGR |= TIM_EGR_UG;    // Bắt buộc cập nhật ngay giá trị 0 vào Shadow Register để kéo output về 0V ngay lập tức
+}
+
+void Start_Signal(void) {
+    Apply_Signal_Settings();
+}
 
 // --- INITIALIZATION ---
 void SignalGenerator_Init(void) {
@@ -98,12 +111,20 @@ void Set_Frequency(uint32_t freq) {
     }
     current_frequency = freq;
     
-    if (current_frequency <= 50) {
-        current_sample_rate = 4000;  
-    } else if (current_frequency <= 500) {
-        current_sample_rate = 10000; 
-    } else {
+    if (current_mode == MODE_SINE || current_mode == MODE_TRIANGLE) {
+        // Khóa cứng tần số lấy mẫu DAQ ở mức cao nhất 40kHz 
+        // để tạo ra số điểm ảnh dày đặc (40-400 điểm/chu kỳ), giúp sóng mượt mà, triệt tiêu gãy khúc.
         current_sample_rate = 40000; 
+    } 
+    else {
+        // Xung vuông tần số có thể xuống 10Hz nên cần tự động zoom out (giảm sample rate)
+        if (current_frequency <= 50) {
+            current_sample_rate = 4000;  
+        } else if (current_frequency <= 500) {
+            current_sample_rate = 10000; 
+        } else {
+            current_sample_rate = 40000; 
+        }
     }
 
     Apply_Signal_Settings();
