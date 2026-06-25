@@ -3,6 +3,8 @@
 
 #include "stm32f4xx.h"
 
+extern uint8_t save_mode;
+
 void Menu_Init(void);
 void Menu_UpdateDisplay(void);
 void Menu_ButtonHandler(uint8_t btn);

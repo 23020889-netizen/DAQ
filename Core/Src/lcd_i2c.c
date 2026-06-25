@@ -73,7 +73,7 @@ static void LCD_Send(uint8_t data, uint8_t flags) {
 }
 
 void LCD_Command(uint8_t cmd) {
-	// cmd: command lênhj điều khiển
+	// cmd: command lệnh điều khiển
     LCD_Send(cmd, 0); // RS = 0 khi gửi lệnh
 }
 

@@ -73,8 +73,14 @@ def read_frame():
     # Doc 4 bytes sample rate do STM32 gui len
     sr_data = ser.read(4)
     if len(sr_data) < 4:
-        return None, None
+        return None, None, 0
     sample_rate = struct.unpack('<I', sr_data)[0]
+
+    # Doc 1 byte save mode
+    sm_data = ser.read(1)
+    if len(sm_data) < 1:
+        return None, None, 0
+    save_mode = struct.unpack('<B', sm_data)[0]
 
     # Doc 2000 bytes du lieu
     raw_data = ser.read(BYTES_PER_FRAME)
@@ -82,12 +88,18 @@ def read_frame():
     if len(raw_data) == BYTES_PER_FRAME:
         # Chuyen doi raw bytes thanh mang uint16
         data = np.frombuffer(raw_data, dtype=np.uint16)
-        return data, sample_rate
-    return None, None
+        return data, sample_rate, save_mode
+    return None, None, 0
+
+# Bien toan cuc cho viec luu file
+is_saving = False
+current_save_time = 0.0
+csv_file = None
 
 def update(frame):
+    global is_saving, current_save_time, csv_file
     # Doc 1 frame du lieu tu STM32
-    data, sample_rate = read_frame()
+    data, sample_rate, save_mode = read_frame()
     if data is not None and sample_rate > 0:
         # Chuyen doi tu ADC 12-bit (0-4095) sang dien ap (0-3.3V)
         voltage_data = data * (3.3 / 4095.0)
@@ -97,7 +109,33 @@ def update(frame):
         
         # Tinh va cap nhat tan so (giu nguyen data goc de tinh de khong sai so)
         freq = calculate_frequency(data, sample_rate)
-        freq_text.set_text(f"Frequency: {freq:.2f} Hz\nSample Rate: {sample_rate} Hz")
+        
+        # Xu ly luu du lieu
+        if save_mode == 1:
+            if not is_saving:
+                is_saving = True
+                current_save_time = 0.0
+                csv_file = open('data.csv', 'w')
+                csv_file.write("Time (s),Voltage (V)\n")
+                print("-> Bat dau luu du lieu vao data.csv")
+                
+            # Ghi mang du lieu
+            dt = 1.0 / sample_rate
+            for v in voltage_data:
+                csv_file.write(f"{current_save_time:.6f},{v:.4f}\n")
+                current_save_time += dt
+            csv_file.flush() # Day xuong o dia
+            
+            freq_text.set_text(f"Frequency: {freq:.2f} Hz\nSample Rate: {sample_rate} Hz\n[SAVE: ON]")
+        else:
+            if is_saving:
+                is_saving = False
+                if csv_file is not None:
+                    csv_file.close()
+                    csv_file = None
+                print("-> Da ngung luu du lieu.")
+            
+            freq_text.set_text(f"Frequency: {freq:.2f} Hz\nSample Rate: {sample_rate} Hz")
         
         return line, freq_text
     return line,

@@ -1,5 +1,7 @@
 #include "digital_output.h"
 
+extern volatile uint32_t current_sample_rate; // Lấy biến toàn cục từ signal_generator.c
+
 volatile uint32_t dig_out_freq = 100; // Mặc định 100 Hz
 volatile uint32_t dig_out_duty = 50;  // Mặc định 50%
 
@@ -39,6 +41,15 @@ void Set_DigitalOutput(uint32_t freq, uint32_t duty_percent) {
 
     dig_out_freq = freq;
     dig_out_duty = duty_percent;
+
+    // Tự động điều chỉnh tần số lấy mẫu (zoom) theo tần số PWM để hiển thị trọn vẹn chu kỳ
+    if (dig_out_freq <= 50) {
+        current_sample_rate = 4000;  
+    } else if (dig_out_freq <= 500) {
+        current_sample_rate = 10000; 
+    } else {
+        current_sample_rate = 40000; 
+    }
 
     uint32_t timer_clock = 16000000;
     uint32_t psc = timer_clock / (65536 * freq);

@@ -17,6 +17,8 @@ static MenuState volt_state = MENU_STATE_SETUP;
 static MenuState dig_out_state = MENU_STATE_SETUP;
 static MenuState dig_in_state = MENU_STATE_SETUP;
 
+uint8_t save_mode = 0; // Cờ lưu dữ liệu (0: OFF, 1: ON)
+
 // Biến cờ lưu sự kiện nút nhấn từ ngắt để xử lý ở Main Loop
 static volatile uint8_t pending_button = 0xFF;
 
@@ -26,6 +28,8 @@ void Menu_Init(void) {
     volt_state = MENU_STATE_SETUP;
     dig_out_state = MENU_STATE_SETUP;
     dig_in_state = MENU_STATE_SETUP;
+    
+    save_mode = 0;
     
     Set_Mode(MODE_SINE);
     Set_Frequency(500);
@@ -65,7 +69,11 @@ void Menu_UpdateDisplay(void) {
             LCD_SetCursor(1, 0);
             LCD_String("Volt: --- V     "); 
         } else {
-            LCD_String("Voltmeter[OK]   ");
+            if (save_mode) {
+                LCD_String("Voltmeter[OK][S]");
+            } else {
+                LCD_String("Voltmeter[OK][ ]");
+            }
             LCD_SetCursor(1, 0);
             LCD_String("Volt: Meas...   ");
         }
@@ -105,7 +113,7 @@ void Menu_Tick(void) {
             current_menu = (current_menu + 1) % 4; // 4 modes
             Menu_UpdateDisplay();
         }
-        else if (btn == 1) { // PC1: Switch Signal / Change Freq D_Out
+        else if (btn == 1) { // PC1: Switch Signal / Change Freq D_Out / Toggle Save
             if (current_menu == 0 && sig_gen_state == MENU_STATE_SETUP) {
                 WaveformMode next_mode = MODE_SINE;
                 if (current_mode == MODE_SINE) next_mode = MODE_TRIANGLE;
@@ -114,6 +122,10 @@ void Menu_Tick(void) {
                 
                 Set_Mode(next_mode);
                 Stop_Signal(); 
+                Menu_UpdateDisplay();
+            }
+            else if (current_menu == 1 && volt_state == MENU_STATE_OK) {
+                save_mode = !save_mode;
                 Menu_UpdateDisplay();
             }
             else if (current_menu == 2 && dig_out_state == MENU_STATE_SETUP) {
@@ -165,8 +177,12 @@ void Menu_Tick(void) {
                 }
             } 
             else if (current_menu == 1) { // Voltmeter
-                if (volt_state == MENU_STATE_SETUP) volt_state = MENU_STATE_OK;
-                else volt_state = MENU_STATE_SETUP;
+                if (volt_state == MENU_STATE_SETUP) {
+                    volt_state = MENU_STATE_OK;
+                } else {
+                    volt_state = MENU_STATE_SETUP;
+                    save_mode = 0; // Ngừng lưu khi thoát chế độ OK
+                }
             }
             else if (current_menu == 2) { // Digital Output
                 if (dig_out_state == MENU_STATE_SETUP) {

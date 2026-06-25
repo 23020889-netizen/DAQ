@@ -45,6 +45,10 @@ int main(void) {
         // Gửi tần số lấy mẫu hiện tại (4 bytes) báo cho Python
         USART2_SendBuffer((uint8_t*)&current_sample_rate, 4);
         
+        // Gửi cờ lưu dữ liệu (1 byte)
+        extern uint8_t save_mode;
+        USART2_SendBuffer((uint8_t*)&save_mode, 1);
+        
         // Gửi mảng dữ liệu ADC thô (2000 bytes)
         USART2_SendBuffer((uint8_t*)adc_buffer, ADC_BUFFER_SIZE * 2);
         
